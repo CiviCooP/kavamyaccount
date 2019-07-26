@@ -1,0 +1,48 @@
+<?php
+
+function kavamyaccount_views_pre_render(&$view) {
+  if ($view->name == 'myaccount' && $view->current_display == 'block') {
+  }
+}
+
+function kavamyaccount_views_pre_view(&$view, &$display_id, &$args) {
+  if ($view->name == 'myaccount' && $view->current_display == 'block') {
+    $helper = new kavamyaccount_helper();
+
+    foreach ($helper->accountFields as $uniqueName => $value) {
+      // add the item to the view
+      $view->add_item(
+        $view->current_display,
+        'field',
+        'views',
+        'nothing',
+        [
+          'label' => $value[0],
+          'type' => 'input',
+          'alter' => ['text' => $value[1]],
+          'element_class' => $uniqueName,
+          'element_default_classes' => 1,
+        ],
+        $uniqueName
+      );
+    }
+
+  }
+}
+
+function kavamyaccount_getExtraFields() {
+  $retval = '';
+
+  $veld = ['Voornaam', 'Naam', 'Leeftijd'];
+  $waarde = ['Alain', 'Benbassat', 49];
+
+  for ($i = 0; $i < count($veld); $i++) {
+    $retval .=
+      '<div class="views-field">'
+      . '<span class="views-label">' . $veld[$i] . ': </span>'
+	    . '<span class="field-content">' . $waarde[$i] . '</span>'
+      . '</div>';
+  }
+
+  return $retval;
+}

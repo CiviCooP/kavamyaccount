@@ -1,0 +1,9 @@
+; $Id$
+
+name = kavamyaccount
+description = Shows information about the user
+package = KAVA
+core = 7.x
+
+files[] = kavamyaccount.module
+files[] = kavamyaccount.inc
