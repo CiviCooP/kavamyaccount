@@ -29,20 +29,3 @@ function kavamyaccount_views_pre_view(&$view, &$display_id, &$args) {
 
   }
 }
-
-function kavamyaccount_getExtraFields() {
-  $retval = '';
-
-  $veld = ['Voornaam', 'Naam', 'Leeftijd'];
-  $waarde = ['Alain', 'Benbassat', 49];
-
-  for ($i = 0; $i < count($veld); $i++) {
-    $retval .=
-      '<div class="views-field">'
-      . '<span class="views-label">' . $veld[$i] . ': </span>'
-	    . '<span class="field-content">' . $waarde[$i] . '</span>'
-      . '</div>';
-  }
-
-  return $retval;
-}
