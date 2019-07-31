@@ -29,6 +29,8 @@ class kavamyaccount_helper {
     $this->accountFields['geboortedatum'] = ['Geboortedatum', $this->geboortedatum];
     $this->accountFields['prive-adres'] = ['Privé adres', $this->getHomeAddress()];
     $this->accountFields['verzendadres'] = ['Verzendadres', $this->getSendingAddress()];
+    $this->accountFields['phone'] = ['Telefoon', $this->getPhone()];
+    $this->accountFields['email'] = ['E-mail', $this->getEmail()];
     $this->accountFields['soort-lidmaatschap'] = ['Soort lidmaatschap', $this->getMembership()];
     $this->accountFields['functie'] = ['Functie', implode(', ', $this->apotheekFuncties)];
     $this->accountFields['werkgever'] = ['Werkgever', implode(', ', $this->apotheken)];
@@ -72,6 +74,56 @@ class kavamyaccount_helper {
       $this->voornaam = $dao->first_name;
       $this->achternaam = $dao->last_name;
       $this->geboortedatum = $dao->birth_date;
+    }
+  }
+
+  private function getEmail() {
+    // get the primary email address
+    $sql = "
+      SELECT
+        email
+      FROM
+        civicrm_email
+      WHERE
+        contact_id = %1
+      AND 
+        is_primary = 1
+    ";
+    $sqlParams = [
+      1 => [$this->contactID, 'Integer'],
+    ];
+
+    $dao = CRM_Core_DAO::executeQuery($sql, $sqlParams);
+    if ($dao->fetch()) {
+      return $dao->email;
+    }
+    else {
+      return '';
+    }
+  }
+
+  private function getPhone() {
+    // get the primary phone
+    $sql = "
+      SELECT
+        phone
+      FROM
+        civicrm_phone
+      WHERE
+        contact_id = %1
+      AND 
+        is_primary = 1
+    ";
+    $sqlParams = [
+      1 => [$this->contactID, 'Integer'],
+    ];
+
+    $dao = CRM_Core_DAO::executeQuery($sql, $sqlParams);
+    if ($dao->fetch()) {
+      return $dao->phone;
+    }
+    else {
+      return '';
     }
   }
 
