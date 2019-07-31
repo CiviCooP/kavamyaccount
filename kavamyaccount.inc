@@ -2,6 +2,8 @@
 
 class kavamyaccount_helper {
   public $accountFields = [];
+  public $isKavaLid = TRUE;
+
   private $contactID = 0;
   private $achternaam;
   private $voornaam;
@@ -156,7 +158,8 @@ class kavamyaccount_helper {
     }
     else {
       // not a member, add link to membership page
-      return 'geen lid - <a href="' . base_path() . 'lidmaatschap" target="_blank">lid worden?</a>';
+      $this->isKavaLid = FALSE;
+      return 'geen lid';
     }
   }
 

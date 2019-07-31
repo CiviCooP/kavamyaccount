@@ -1,14 +1,11 @@
 <?php
 
-function kavamyaccount_views_pre_render(&$view) {
-  if ($view->name == 'myaccount' && $view->current_display == 'block') {
-  }
-}
-
 function kavamyaccount_views_pre_view(&$view, &$display_id, &$args) {
   if ($view->name == 'myaccount' && $view->current_display == 'block') {
+    // get our helper object
     $helper = new kavamyaccount_helper();
 
+    // loop over all fields to add to the view
     foreach ($helper->accountFields as $uniqueName => $value) {
       // add the item to the view
       $view->add_item(
@@ -24,6 +21,65 @@ function kavamyaccount_views_pre_view(&$view, &$display_id, &$args) {
           'element_default_classes' => 1,
         ],
         $uniqueName
+      );
+    }
+
+    // add the button "Wijziging doorgeven"
+    $view->add_item(
+      $view->current_display,
+      'field',
+      'views',
+      'nothing',
+      [
+        'label' => '',
+        'alter' => [
+          'text' => 'Wijziging doorgeven',
+          'make_link' => TRUE,
+          'path' => 'account/wijziging',
+          'link_class' => 'button button--green'
+        ],
+        'element_label_colon' => FALSE,
+      ],
+      'button-account-wijziging'
+    );
+
+    // add the button "Wachtwoord wijzigen"
+    $view->add_item(
+      $view->current_display,
+      'field',
+      'views',
+      'nothing',
+      [
+        'label' => '',
+        'alter' => [
+          'text' => 'Wachtwoord wijzigen',
+          'make_link' => TRUE,
+          'path' => 'account/changepass',
+          'link_class' => 'button button--green'
+        ],
+        'element_label_colon' => FALSE,
+      ],
+      'button-wachtwoord-wijziging'
+    );
+
+    // for non-members, add button "Word lid"
+    if (!$helper->isKavaLid) {
+      $view->add_item(
+        $view->current_display,
+        'field',
+        'views',
+        'nothing',
+        [
+          'label' => '',
+          'alter' => [
+            'text' => 'Word lid van KAVA',
+            'make_link' => TRUE,
+            'path' => 'lidmaatschap',
+            'link_class' => 'button button--green'
+          ],
+          'element_label_colon' => FALSE,
+        ],
+        'button-word-lid'
       );
     }
 
