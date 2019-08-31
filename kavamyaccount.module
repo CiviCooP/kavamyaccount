@@ -2,6 +2,8 @@
 
 function kavamyaccount_views_pre_view(&$view, &$display_id, &$args) {
   if ($view->name == 'myaccount' && $view->current_display == 'block') {
+    drupal_add_css(drupal_get_path('module', 'kavamyaccount') . '/kavamyaccount.css', array('group' => CSS_DEFAULT, 'type' => 'file'));
+
     // get our helper object
     $helper = new kavamyaccount_helper();
 
@@ -36,9 +38,10 @@ function kavamyaccount_views_pre_view(&$view, &$display_id, &$args) {
           'text' => 'Wijziging doorgeven',
           'make_link' => TRUE,
           'path' => 'account/wijziging',
-          'link_class' => 'button button--green'
+          'link_class' => 'button button--green',
         ],
         'element_label_colon' => FALSE,
+        'element_style' => 'color:red',
       ],
       'button-account-wijziging'
     );

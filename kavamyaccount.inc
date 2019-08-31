@@ -8,8 +8,8 @@ class kavamyaccount_helper {
   private $achternaam;
   private $voornaam;
   private $geboortedatum;
-  private $apotheken;
-  private $apotheekFuncties;
+  private $apotheken = [];
+  private $apotheekFuncties = [];
 
   public function __construct() {
     // get civicrm contact id
@@ -20,6 +20,13 @@ class kavamyaccount_helper {
 
     // apotheken en functies
     $this->getFunction();
+
+    if (count($this->apotheken) == 0) {
+      $this->apotheken = ['onbekend'];
+    }
+    if (count($this->apotheekFuncties) == 0) {
+      $this->apotheekFuncties = ['onbekend'];
+    }
 
     // structuur:
     //   index = unieke naam in kleine letters zonder accenten, spaties...
@@ -35,7 +42,7 @@ class kavamyaccount_helper {
     $this->accountFields['functie'] = ['Functie', implode(', ', $this->apotheekFuncties)];
     $this->accountFields['werkgever'] = ['Werkgever', implode(', ', $this->apotheken)];
     $this->accountFields['elz-zone'] = ['ELZ-zone', $this->getELZone()];
-    $this->accountFields['niewsbrieven'] = ['Niewsbrieven', $this->getNewsletters()];
+    $this->accountFields['niewsbrieven'] = ['Nieuwsbrieven', $this->getNewsletters()];
   }
 
   private function getContactID() {
@@ -148,7 +155,7 @@ class kavamyaccount_helper {
       return $dao->address;
     }
     else {
-      return '';
+      return 'idem';
     }
   }
 
@@ -178,7 +185,7 @@ class kavamyaccount_helper {
       return $dao->address;
     }
     else {
-      return '';
+      return 'idem';
     }
   }
 
@@ -237,11 +244,14 @@ class kavamyaccount_helper {
 
     $sql = "
       SELECT
-        c.display_name apotheek
+        c.display_name apotheek,
+        au.apb_nummer_43 apb_nummer
       FROM
         civicrm_relationship r 
       INNER JOIN
         civicrm_contact c on c.id = r.{$employer}
+      LEFT OUTER JOIN
+        civicrm_value_contact_apotheekuitbating au on au.entity_id = c.id
       WHERE
         relationship_type_id = %2
       AND
@@ -261,13 +271,17 @@ class kavamyaccount_helper {
     while ($dao->fetch()) {
       $found = TRUE;
 
-      $this->apotheken[] = $dao->apotheek;
+      $apoName = $dao->apotheek;
+      if ($dao->apb_nummer) {
+        $apoName .= ' (APB-nr. ' . $dao->apb_nummer . ')';
+      }
+
+      $this->apotheken[] = $apoName;
     }
 
     if ($found) {
       $this->apotheekFuncties[] = $title;
     }
-
   }
 
   private function getELZone() {
@@ -299,7 +313,7 @@ class kavamyaccount_helper {
       return $zone;
     }
     else {
-      return '';
+      return 'onbekend';
     }
   }
 
@@ -336,12 +350,15 @@ class kavamyaccount_helper {
       foreach ($result['values'] as $nwslttr) {
         // check if the person is subscribed to that newsletter
         if (in_array($nwslttr['value'], $subscriptions)) {
-          $nwslttrList[] = $nwslttr['label'];
+          $nwslttrList[] = $nwslttr['label'] . ': ja';
+        }
+        else {
+          $nwslttrList[] = $nwslttr['label'] . ': nee';
         }
       }
     }
 
-    return implode(', ', $nwslttrList);
+    return implode('<br>', $nwslttrList);
   }
 
 

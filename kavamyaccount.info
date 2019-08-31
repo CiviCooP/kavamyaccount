@@ -7,3 +7,4 @@ core = 7.x
 
 files[] = kavamyaccount.module
 files[] = kavamyaccount.inc
+files[] = kavamyaccount.css
