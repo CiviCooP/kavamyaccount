@@ -334,27 +334,29 @@ class kavamyaccount_helper {
     ];
 
     $dao = CRM_Core_DAO::executeQuery($sql, $sqlParams);
-
     if ($dao->fetch() && $dao->newsletter_subscriptions) {
       // concert the newsletter subsc. to an array
       $subscriptions = explode(CRM_Core_DAO::VALUE_SEPARATOR, $dao->newsletter_subscriptions);
+    }
+    else {
+      $subscriptions = [];
+    }
 
-      // get newsletter names
-      $result = civicrm_api3('OptionValue', 'get', [
-        'sequential' => 1,
-        'option_group_id' => "kava_communicatiediensten_20180829112251",
-        'is_active' => 1,
-      ]);
+    // get newsletter names
+    $result = civicrm_api3('OptionValue', 'get', [
+      'sequential' => 1,
+      'option_group_id' => "kava_communicatiediensten_20180829112251",
+      'is_active' => 1,
+    ]);
 
-      // loop over the newsletters
-      foreach ($result['values'] as $nwslttr) {
-        // check if the person is subscribed to that newsletter
-        if (in_array($nwslttr['value'], $subscriptions)) {
-          $nwslttrList[] = $nwslttr['label'] . ': ja';
-        }
-        else {
-          $nwslttrList[] = $nwslttr['label'] . ': nee';
-        }
+    // loop over the newsletters
+    foreach ($result['values'] as $nwslttr) {
+      // check if the person is subscribed to that newsletter
+      if (in_array($nwslttr['value'], $subscriptions)) {
+        $nwslttrList[] = $nwslttr['label'] . ': ja';
+      }
+      else {
+        $nwslttrList[] = $nwslttr['label'] . ': nee';
       }
     }
 
