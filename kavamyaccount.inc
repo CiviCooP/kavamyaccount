@@ -8,6 +8,8 @@ class kavamyaccount_helper {
   private $achternaam;
   private $voornaam;
   private $geboortedatum;
+  private $rizivnummer;
+  private $ordenummer;
   private $apotheken = [];
   private $apotheekFuncties = [];
 
@@ -34,6 +36,8 @@ class kavamyaccount_helper {
     $this->accountFields['voornaam'] = ['Voornaam', $this->voornaam];
     $this->accountFields['achternaam'] = ['Achternaam', $this->achternaam];
     $this->accountFields['geboortedatum'] = ['Geboortedatum', $this->geboortedatum];
+    $this->accountFields['rizivnummer'] = ['RIZIV-nummer', $this->rizivnummer];
+    $this->accountFields['ordenummer'] = ['Nummer Orde der apothekers', $this->ordenummer];
     $this->accountFields['prive-adres'] = ['Privé adres', $this->getHomeAddress()];
     $this->accountFields['verzendadres'] = ['Verzendadres', $this->getSendingAddress()];
     $this->accountFields['phone'] = ['Telefoon', $this->getPhone()];
@@ -64,13 +68,17 @@ class kavamyaccount_helper {
   private function getNameAndSomeOtherFields() {
     $sql = "
       SELECT
-        first_name,
-        last_name,
-        date_format(birth_date, '%d-%m-%Y') birth_date
+        c.first_name,
+        c.last_name,
+        date_format(c.birth_date, '%d-%m-%Y') birth_date,
+        ca.riziv_nummer_14 riziv_nummer,
+        ca.inschrijvingsnr_orde_74 orde_nummer
       FROM
-        civicrm_contact
+        civicrm_contact c
+      left outer join 
+        civicrm_value_contact_apotheker ca on c.id = ca.entity_id
       WHERE
-        id = %1
+        c.id = %1
     ";
     $sqlParams = [
       1 => [$this->contactID, 'Integer'],
@@ -81,6 +89,8 @@ class kavamyaccount_helper {
       $this->voornaam = $dao->first_name;
       $this->achternaam = $dao->last_name;
       $this->geboortedatum = $dao->birth_date;
+      $this->rizivnummer = $dao->riziv_nummer;
+      $this->ordenummer = $dao->orde_nummer;
     }
   }
 
