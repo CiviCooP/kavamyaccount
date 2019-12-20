@@ -37,7 +37,7 @@ class kavamyaccount_helper {
     $this->accountFields['achternaam'] = ['Achternaam', $this->achternaam];
     $this->accountFields['geboortedatum'] = ['Geboortedatum', $this->geboortedatum];
     $this->accountFields['rizivnummer'] = ['RIZIV-nummer', $this->rizivnummer];
-    $this->accountFields['ordenummer'] = ['Nummer Orde der apothekers', $this->ordenummer];
+    //$this->accountFields['ordenummer'] = ['Nummer Orde der apothekers', $this->ordenummer];
     $this->accountFields['prive-adres'] = ['Privé adres', $this->getHomeAddress()];
     $this->accountFields['verzendadres'] = ['Verzendadres', $this->getSendingAddress()];
     $this->accountFields['phone'] = ['Telefoon', $this->getPhone()];
@@ -45,7 +45,9 @@ class kavamyaccount_helper {
     $this->accountFields['soort-lidmaatschap'] = ['Soort lidmaatschap', $this->getMembership()];
     $this->accountFields['functie'] = ['Functie', implode(', ', $this->apotheekFuncties)];
     $this->accountFields['werkgever'] = ['Werkgever', implode(', ', $this->apotheken)];
-    $this->accountFields['elz-zone'] = ['ELZ-zone', $this->getELZone()];
+    if ($this->getELZ() != '') {
+       $this->accountFields['elzdisplay'] = ['Eerstelijnszone', $this->getELZ()];
+    }
     $this->accountFields['niewsbrieven'] = ['Nieuwsbrieven', $this->getNewsletters()];
   }
 
@@ -294,39 +296,6 @@ class kavamyaccount_helper {
     }
   }
 
-  private function getELZone() {
-    $sql = "
-      select
-        g.title elz_zone
-      from
-        civicrm_group g
-      inner join 
-        civicrm_group_contact gc on g.id = gc.group_id
-      where
-        gc.contact_id = %1
-      and 
-        g.title like 'ELZ %'
-    ";
-    $sqlParams = [
-      1 => [$this->contactID, 'Integer'],
-    ];
-
-    $dao = CRM_Core_DAO::executeQuery($sql, $sqlParams);
-    if ($dao->fetch()) {
-      // strip chars
-      $zone = $dao->elz_zone;
-      $strip = ['ELZ ', ' Medewerkers', ' Titularis'];
-      foreach ($strip as $toStrip) {
-        $zone = str_replace($toStrip, '', $zone);
-      }
-
-      return $zone;
-    }
-    else {
-      return 'onbekend';
-    }
-  }
-
   private function getNewsletters() {
     $nwslttrList = [];
 
@@ -373,5 +342,22 @@ class kavamyaccount_helper {
     return implode('<br>', $nwslttrList);
   }
 
+  private function getELZ() {
+    $sql = "
+	    SELECT elz.display_name displayname
+	    FROM civicrm_contact contact
+	    JOIN civicrm_relationship  rel ON contact.id=rel.contact_id_a
+	    JOIN civicrm_contact elz ON elz.id=contact_id_b
+	    WHERE relationship_type_id = 109 AND rel.end_date > CURRENT_DATE and contact.id=%1; 
+    ";
+    $sqlParams = [
+        1 => [$this->contactID, 'Integer'],
+    ];
 
+    $dao = CRM_Core_DAO::executeQuery($sql, $sqlParams);
+    if ($dao->fetch()) {
+       $elzdisplay = $dao->displayname;
+    }
+    return ($elzdisplay);
+  }
 }
