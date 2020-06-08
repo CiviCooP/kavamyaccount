@@ -13,6 +13,7 @@ class kavamyaccount_helper {
   private $apotheken = [];
   private $apotheekFuncties = [];
   private $apotheekTeam = [];
+  private $abonnementen = [];
 
   public function __construct() {
     // get civicrm contact id
@@ -51,8 +52,12 @@ class kavamyaccount_helper {
     }
     $this->accountFields['niewsbrieven'] = ['Nieuwsbrieven', $this->getNewsletters()];
 
+    // only for (co-)titularis
     if (count($this->apotheekTeam) > 0) {
       $this->accountFields['apotheekteam'] = ['Mijn apotheekteam', implode('<br>', $this->apotheekTeam)];
+    }
+    if (count($this->abonnementen) > 0) {
+      $this->accountFields['abonnementen'] = ['Mijn abonnementen', implode('<br>', $this->abonnementen)];
     }
   }
 
@@ -249,7 +254,7 @@ class kavamyaccount_helper {
     $this->getFunctionDetails('AB', 'farmaceutisch technisch assistent', 53, FALSE);
   }
 
-  private function getFunctionDetails($direction, $title, $relationshipID, $getTeamMembers) {
+  private function getFunctionDetails($direction, $title, $relationshipID, $getExtraPharmacyInfo) {
     if ($direction == 'AB') {
       $person = 'contact_id_a';
       $employer = 'contact_id_b';
@@ -296,13 +301,16 @@ class kavamyaccount_helper {
 
       $this->apotheken[] = $apoName;
 
-      // get team members?
-      if ($getTeamMembers) {
+      if ($getExtraPharmacyInfo) {
+        // get team members
         $this->getTeamMembers($dao->id, 'BA', 'titularis', 35);
         $this->getTeamMembers($dao->id,'BA', 'co-titularis', 41);
         $this->getTeamMembers($dao->id,'AB', 'adjunct', 37);
         $this->getTeamMembers($dao->id,'AB', 'plaatsvervangend apotheker', 38);
         $this->getTeamMembers($dao->id,'AB', 'farmaceutisch technisch assistent', 53);
+
+        // get subscriptions
+        $this->getSubscriptions($dao->id);
       }
     }
 
@@ -410,6 +418,49 @@ class kavamyaccount_helper {
     $dao = CRM_Core_DAO::executeQuery($sql, $sqlParams);
     while ($dao->fetch()) {
       $this->apotheekTeam[] = $dao->team_member . " ($title)";
+    }
+  }
+
+  private function getSubscriptions($apoId) {
+    $sql = "
+      SELECT
+        count(m.id)
+      FROM
+        civicrm_membership m
+      WHERE
+        m.membership_type_id = %2
+      AND
+        m.start_date <= NOW()
+      AND
+        m.end_date >= NOW()
+      AND
+        m.contact_id = %1
+    ";
+
+    // see if there's an AFT subscription (id = 2)
+    $sqlParams = [
+      1 => [$apoId, 'Integer'],
+      2 => [2, 'Integer'],
+    ];
+    $n = CRM_Core_DAO::singleValueQuery($sql, $sqlParams);
+    if ($n) {
+      $this->abonnementen[] = 'AFT (ja)';
+    }
+    else {
+      $this->abonnementen[] = 'AFT (nee, <a href="https://www.kava.be/aft">neem abonnement</a>)';
+    }
+
+    // see if there's a GMW subscription (id = 7)
+    $sqlParams = [
+      1 => [$apoId, 'Integer'],
+      2 => [7, 'Integer'],
+    ];
+    $n = CRM_Core_DAO::singleValueQuery($sql, $sqlParams);
+    if ($n) {
+      $this->abonnementen[] = 'Geneesmiddelenwijzer (ja)';
+    }
+    else {
+      $this->abonnementen[] = 'Geneesmiddelenwijzer (nee, <a href="https://www.kava.be/Bestelformuliergeneesmiddelenwijzerjaarabonnement">neem abonnement</a>)';
     }
   }
 }
