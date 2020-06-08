@@ -12,6 +12,7 @@ class kavamyaccount_helper {
   private $ordenummer;
   private $apotheken = [];
   private $apotheekFuncties = [];
+  private $apotheekTeam = [];
 
   public function __construct() {
     // get civicrm contact id
@@ -49,6 +50,10 @@ class kavamyaccount_helper {
        $this->accountFields['elzdisplay'] = ['Eerstelijnszone', $this->getELZ()];
     }
     $this->accountFields['niewsbrieven'] = ['Nieuwsbrieven', $this->getNewsletters()];
+
+    if (count($this->apotheekTeam) > 0) {
+      $this->accountFields['apotheekteam'] = ['Mijn apotheekteam', implode('<br>', $this->apotheekTeam)];
+    }
   }
 
   private function getContactID() {
@@ -77,7 +82,7 @@ class kavamyaccount_helper {
         ca.inschrijvingsnr_orde_74 orde_nummer
       FROM
         civicrm_contact c
-      left outer join 
+      left outer join
         civicrm_value_contact_apotheker ca on c.id = ca.entity_id
       WHERE
         c.id = %1
@@ -105,7 +110,7 @@ class kavamyaccount_helper {
         civicrm_email
       WHERE
         contact_id = %1
-      AND 
+      AND
         is_primary = 1
     ";
     $sqlParams = [
@@ -130,7 +135,7 @@ class kavamyaccount_helper {
         civicrm_phone
       WHERE
         contact_id = %1
-      AND 
+      AND
         is_primary = 1
     ";
     $sqlParams = [
@@ -155,7 +160,7 @@ class kavamyaccount_helper {
         civicrm_address
       WHERE
         contact_id = %1
-      AND 
+      AND
         is_primary = 1
     ";
     $sqlParams = [
@@ -181,7 +186,7 @@ class kavamyaccount_helper {
         civicrm_address
       WHERE
         contact_id = %1
-      AND 
+      AND
         is_primary = 0
       AND
         location_type_id in (1, 3, 4)
@@ -206,7 +211,7 @@ class kavamyaccount_helper {
       SELECT
         label_a_b membership
       FROM
-        civicrm_relationship r 
+        civicrm_relationship r
       INNER JOIN
         civicrm_relationship_type rt on r.relationship_type_id = rt.id
       WHERE
@@ -215,7 +220,7 @@ class kavamyaccount_helper {
         start_date <= NOW()
       AND
         end_date >= NOW()
-      AND 
+      AND
         contact_id_a = %1
     ";
     $sqlParams = [
@@ -237,14 +242,14 @@ class kavamyaccount_helper {
   private function getFunction() {
     // inconsistent use of name_a_b vs. name_b_a
     // we can't retrieve all at once!
-    $this->getFunctionDetails('BA', 'titularis', 35);
-    $this->getFunctionDetails('BA', 'co-titularis', 41);
-    $this->getFunctionDetails('AB', 'adjunct', 37);
-    $this->getFunctionDetails('AB', 'plaatsvervangend apotheker', 38);
-    $this->getFunctionDetails('AB', 'farmaceutisch technisch assistent', 53);
+    $this->getFunctionDetails('BA', 'titularis', 35, TRUE);
+    $this->getFunctionDetails('BA', 'co-titularis', 41, TRUE);
+    $this->getFunctionDetails('AB', 'adjunct', 37, FALSE);
+    $this->getFunctionDetails('AB', 'plaatsvervangend apotheker', 38, FALSE);
+    $this->getFunctionDetails('AB', 'farmaceutisch technisch assistent', 53, FALSE);
   }
 
-  private function getFunctionDetails($direction, $title, $relationshipID) {
+  private function getFunctionDetails($direction, $title, $relationshipID, $getTeamMembers) {
     if ($direction == 'AB') {
       $person = 'contact_id_a';
       $employer = 'contact_id_b';
@@ -256,10 +261,11 @@ class kavamyaccount_helper {
 
     $sql = "
       SELECT
+        c.id,
         c.display_name apotheek,
         au.apb_nummer_43 apb_nummer
       FROM
-        civicrm_relationship r 
+        civicrm_relationship r
       INNER JOIN
         civicrm_contact c on c.id = r.{$employer}
       LEFT OUTER JOIN
@@ -270,7 +276,7 @@ class kavamyaccount_helper {
         start_date <= NOW()
       AND
         end_date >= NOW()
-      AND 
+      AND
         r.{$person} = %1
     ";
     $sqlParams = [
@@ -289,6 +295,15 @@ class kavamyaccount_helper {
       }
 
       $this->apotheken[] = $apoName;
+
+      // get team members?
+      if ($getTeamMembers) {
+        $this->getTeamMembers($dao->id, 'BA', 'titularis', 35);
+        $this->getTeamMembers($dao->id,'BA', 'co-titularis', 41);
+        $this->getTeamMembers($dao->id,'AB', 'adjunct', 37);
+        $this->getTeamMembers($dao->id,'AB', 'plaatsvervangend apotheker', 38);
+        $this->getTeamMembers($dao->id,'AB', 'farmaceutisch technisch assistent', 53);
+      }
     }
 
     if ($found) {
@@ -301,12 +316,12 @@ class kavamyaccount_helper {
 
     // get newsletter subscriptions
     $sql = "
-      select 
-        kava_communicatiediensten_253 newsletter_subscriptions 
-      from 
+      select
+        kava_communicatiediensten_253 newsletter_subscriptions
+      from
         civicrm_value_kava_communic_76
-      where 
-        entity_id = %1 
+      where
+        entity_id = %1
     ";
     $sqlParams = [
       1 => [$this->contactID, 'Integer'],
@@ -348,7 +363,7 @@ class kavamyaccount_helper {
 	    FROM civicrm_contact contact
 	    JOIN civicrm_relationship  rel ON contact.id=rel.contact_id_a
 	    JOIN civicrm_contact elz ON elz.id=contact_id_b
-	    WHERE relationship_type_id = 109 AND rel.end_date > CURRENT_DATE and contact.id=%1; 
+	    WHERE relationship_type_id = 109 AND rel.end_date > CURRENT_DATE and contact.id=%1;
     ";
     $sqlParams = [
         1 => [$this->contactID, 'Integer'],
@@ -359,5 +374,42 @@ class kavamyaccount_helper {
        $elzdisplay = $dao->displayname;
     }
     return ($elzdisplay);
+  }
+
+  private function getTeamMembers($apoId, $direction, $title, $relationshipID) {
+    if ($direction == 'AB') {
+      $person = 'contact_id_a';
+      $employer = 'contact_id_b';
+    }
+    else {
+      $person = 'contact_id_b';
+      $employer = 'contact_id_a';
+    }
+
+    $sql = "
+      SELECT
+        concat(p.first_name, ' ', p.last_name) team_member
+      FROM
+        civicrm_relationship r
+      INNER JOIN
+        civicrm_contact p on p.id = r.{$person}
+      WHERE
+        r.relationship_type_id = %2
+      AND
+        r.start_date <= NOW()
+      AND
+        r.end_date >= NOW()
+      AND
+        r.{$employer} = %1
+    ";
+    $sqlParams = [
+      1 => [$apoId, 'Integer'],
+      2 => [$relationshipID, 'Integer'],
+    ];
+
+    $dao = CRM_Core_DAO::executeQuery($sql, $sqlParams);
+    while ($dao->fetch()) {
+      $this->apotheekTeam[] = $dao->team_member . " ($title)";
+    }
   }
 }
