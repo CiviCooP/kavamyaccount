@@ -44,7 +44,7 @@ class kavamyaccount_helper {
     $this->accountFields['verzendadres'] = ['Verzendadres', $this->getSendingAddress()];
     $this->accountFields['phone'] = ['Telefoon', $this->getPhone()];
     $this->accountFields['email'] = ['E-mail', $this->getEmail()];
-    $this->accountFields['soort-lidmaatschap'] = ['Soort lidmaatschap', $this->getMembership()];
+    $this->accountFields['soort-lidmaatschap'] = ['Soort lidmaatschap', $this->getMembership($this->contactID)];
     $this->accountFields['functie'] = ['Functie', implode(', ', $this->apotheekFuncties)];
     $this->accountFields['werkgever'] = ['Werkgever', implode(', ', $this->apotheken)];
     if ($this->getELZ() != '') {
@@ -211,7 +211,7 @@ class kavamyaccount_helper {
     }
   }
 
-  private function getMembership() {
+  private function getMembership($contactId) {
     $sql = "
       SELECT
         label_a_b membership
@@ -229,7 +229,7 @@ class kavamyaccount_helper {
         contact_id_a = %1
     ";
     $sqlParams = [
-      1 => [$this->contactID, 'Integer'],
+      1 => [$contactId, 'Integer'],
     ];
 
     $dao = CRM_Core_DAO::executeQuery($sql, $sqlParams);
@@ -396,6 +396,7 @@ class kavamyaccount_helper {
 
     $sql = "
       SELECT
+        p.id,
         concat(p.first_name, ' ', p.last_name) team_member
       FROM
         civicrm_relationship r
@@ -417,7 +418,10 @@ class kavamyaccount_helper {
 
     $dao = CRM_Core_DAO::executeQuery($sql, $sqlParams);
     while ($dao->fetch()) {
-      $this->apotheekTeam[] = $dao->team_member . " ($title)";
+      // get the KAVA membership of this person
+      $member = $this->getMembership($dao->id);
+
+      $this->apotheekTeam[] = $dao->team_member . " ($title - $member)";
     }
   }
 
