@@ -54,7 +54,9 @@ class kavamyaccount_helper {
 
     // only for (co-)titularis
     if (count($this->apotheekTeam) > 0) {
-      $this->accountFields['apotheekteam'] = ['Mijn apotheekteam', implode('<br>', $this->apotheekTeam)];
+      $url = base_path() . 'sites/all/modules/custom/kavamyaccount/questionmark.png';
+      $helpText = '<img src="'. $url . '" title="Het kennen van uw adjunct, FTA... kan nuttig zijn voor (o.a.) opleidingen en inschrijvingen op het niveau van de apotheek én voor activiteiten op maat van bv. uw apotheekassistent. Geef via de `Wijziging doorgeven` knop de correcte gegevens door. Dat doet u pas na toestemming van de betrokken medewerker om diens gegevens (het gaat dan concreet om voornaam, naam, mailadres en functie) met ons te delen. Uiteraard gaan we hiermee op een correcte en GDPR-vriendelijke manier om, zie ook onze privacy voorwaarden en GDPR-verklaring."> ';
+      $this->accountFields['apotheekteam'] = ['Mijn apotheekteam', $helpText . implode('<br>', $this->apotheekTeam)];
     }
     if (count($this->abonnementen) > 0) {
       $this->accountFields['abonnementen'] = ['Mijn abonnementen', implode('<br>', $this->abonnementen)];
@@ -366,22 +368,29 @@ class kavamyaccount_helper {
   }
 
   private function getELZ() {
+    $elzdisplay = '';
+
     $sql = "
-	    SELECT elz.display_name displayname
-	    FROM civicrm_contact contact
-	    JOIN civicrm_relationship  rel ON contact.id=rel.contact_id_a
-	    JOIN civicrm_contact elz ON elz.id=contact_id_b
-	    WHERE relationship_type_id = 109 AND rel.end_date > CURRENT_DATE and contact.id=%1;
+	    SELECT
+	      elz.display_name displayname
+	    FROM
+	      civicrm_contact contact
+	    JOIN
+	      civicrm_relationship  rel ON contact.id=rel.contact_id_a
+	    JOIN
+	      civicrm_contact elz ON elz.id=contact_id_b
+	    WHERE
+	      relationship_type_id = 109 AND rel.end_date > CURRENT_DATE and contact.id = %1;
     ";
     $sqlParams = [
-        1 => [$this->contactID, 'Integer'],
+      1 => [$this->contactID, 'Integer'],
     ];
 
     $dao = CRM_Core_DAO::executeQuery($sql, $sqlParams);
     if ($dao->fetch()) {
-       $elzdisplay = $dao->displayname;
+      $elzdisplay = $dao->displayname;
     }
-    return ($elzdisplay);
+    return $elzdisplay;
   }
 
   private function getTeamMembers($apoId, $direction, $title, $relationshipID) {
